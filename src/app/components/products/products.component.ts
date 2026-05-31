@@ -48,6 +48,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
     type: ['in', Validators.required],
     quantity: [1, [Validators.required, Validators.min(1)]],
     note: [''],
+    purchaseCost: [0, [Validators.required, Validators.min(0)]],
   });
 
   ngOnInit(): void {
@@ -122,8 +123,21 @@ export class ProductsComponent implements OnInit, OnDestroy {
   openStockModal(product: Product): void {
     this.stockProduct = product;
     this.stockError = '';
-    this.stockForm.reset({ type: 'in', quantity: 1, note: '' });
+    this.stockForm.reset({ type: 'in', quantity: 1, note: '', purchaseCost: product.cost });
     this.showStockModal = true;
+  }
+
+  get newAvgCost(): number {
+    if (!this.stockProduct) return 0;
+    const qty = Number(this.stockForm.get('quantity')?.value) || 0;
+    const purchaseCost = Number(this.stockForm.get('purchaseCost')?.value) || 0;
+    const stockAfter = this.stockProduct.quantity + qty;
+    if (stockAfter <= 0) return purchaseCost;
+    return (
+      Math.round(
+        ((this.stockProduct.quantity * this.stockProduct.cost + qty * purchaseCost) / stockAfter) * 100
+      ) / 100
+    );
   }
 
   saveStock(): void {
@@ -136,7 +150,8 @@ export class ProductsComponent implements OnInit, OnDestroy {
       this.stockProduct!.id,
       v.type as 'in' | 'out',
       Number(v.quantity),
-      v.note ?? ''
+      v.note ?? '',
+      v.type === 'in' ? Number(v.purchaseCost) : undefined
     );
     if (!success) {
       this.stockError = 'Cannot reduce stock below 0.';

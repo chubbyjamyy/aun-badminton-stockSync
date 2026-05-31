@@ -89,6 +89,9 @@
 .text-green { color: #16a34a; font-weight: 600; }
 .text-red   { color: #dc2626; font-weight: 600; }
 
+.profit-pos { color: #16a34a; font-weight: 600; }
+.profit-neg { color: #dc2626; font-weight: 600; }
+
 .table-footer {
   padding: 12px;
   text-align: center;

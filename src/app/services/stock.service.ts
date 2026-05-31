@@ -70,7 +70,13 @@ export class StockService {
     this.saveProducts(this.products$.getValue().filter((p) => p.id !== id));
   }
 
-  adjustStock(productId: string, type: 'in' | 'out', quantity: number, note: string): boolean {
+  adjustStock(
+    productId: string,
+    type: 'in' | 'out',
+    quantity: number,
+    note: string,
+    purchaseCost?: number
+  ): boolean {
     const products = this.products$.getValue();
     const product = products.find((p) => p.id === productId);
     if (!product) return false;
@@ -79,7 +85,18 @@ export class StockService {
     const stockAfter = type === 'in' ? stockBefore + quantity : stockBefore - quantity;
     if (stockAfter < 0) return false;
 
-    this.updateProduct(productId, { quantity: stockAfter });
+    const costBefore = product.cost;
+    let costAfter = costBefore;
+
+    // Recalculate weighted average cost on stock in
+    if (type === 'in' && purchaseCost !== undefined && purchaseCost >= 0) {
+      costAfter =
+        stockAfter > 0
+          ? Math.round(((stockBefore * costBefore + quantity * purchaseCost) / stockAfter) * 100) / 100
+          : purchaseCost;
+    }
+
+    this.updateProduct(productId, { quantity: stockAfter, cost: costAfter });
 
     const transaction: Transaction = {
       id: crypto.randomUUID(),
@@ -91,6 +108,10 @@ export class StockService {
       date: new Date().toISOString(),
       stockBefore,
       stockAfter,
+      purchaseCost: type === 'in' ? purchaseCost : undefined,
+      costBefore,
+      costAfter,
+      sellPrice: product.price,
     };
     this.saveTransactions([transaction, ...this.transactions$.getValue()]);
     return true;

@@ -60,6 +60,9 @@
               <th>Qty</th>
               <th>Before</th>
               <th>After</th>
+              <th>Unit Cost</th>
+              <th>Sell Price</th>
+              <th>Profit</th>
               <th>Note</th>
             </tr>
           </thead>
@@ -80,6 +83,19 @@
                   <span [class.text-green]="txn.type === 'in'" [class.text-red]="txn.type === 'out'">
                     {{ txn.stockAfter }}
                   </span>
+                </td>
+                <td class="text-muted">
+                  {{ txn.type === 'in' ? (txn.purchaseCost ?? txn.costAfter ?? '—') + ' ฿' : (txn.costBefore != null ? txn.costBefore + ' ฿' : '—') }}
+                </td>
+                <td class="text-muted">{{ txn.sellPrice != null ? txn.sellPrice + ' ฿' : '—' }}</td>
+                <td
+                  [class.profit-pos]="txn.type === 'out' && txn.sellPrice != null && txn.costBefore != null && (txn.sellPrice - txn.costBefore) * txn.quantity > 0"
+                  [class.profit-neg]="txn.type === 'out' && txn.sellPrice != null && txn.costBefore != null && (txn.sellPrice - txn.costBefore) * txn.quantity < 0">
+                  @if (txn.type === 'out' && txn.sellPrice != null && txn.costBefore != null) {
+                    {{ (txn.sellPrice - txn.costBefore) * txn.quantity | number:'1.2-2' }} ฿
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
                 </td>
                 <td class="text-muted">{{ txn.note || '—' }}</td>
               </tr>

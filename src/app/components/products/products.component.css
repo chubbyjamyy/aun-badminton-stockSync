@@ -114,6 +114,24 @@
   border-radius: 6px;
 }
 
+/* Avg cost preview in stock modal */
+.avg-cost-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #166534;
+}
+
+.avg-cost-value {
+  font-weight: 700;
+}
+
 /* Low stock warning */
 .stock-warning {
   color: #ea580c;

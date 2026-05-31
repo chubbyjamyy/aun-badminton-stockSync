@@ -10,4 +10,8 @@ export interface Transaction {
   date: string;
   stockBefore: number;
   stockAfter: number;
+  purchaseCost?: number;
+  costBefore?: number;
+  costAfter?: number;
+  sellPrice?: number;
 }
