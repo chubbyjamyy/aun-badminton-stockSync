@@ -1,0 +1,120 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Dashboard</h1>
+    <span class="subtitle">Stock overview for your badminton store</span>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon blue">📦</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ totalProducts }}</div>
+        <div class="stat-label">Total Products</div>
+      </div>
+    </div>
+    <div class="stat-card" [class.alert-card]="lowStockProducts.length > 0">
+      <div class="stat-icon yellow">⚠️</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ lowStockProducts.length }}</div>
+        <div class="stat-label">Low Stock Items</div>
+      </div>
+    </div>
+    <div class="stat-card" [class.alert-card]="outOfStockProducts.length > 0">
+      <div class="stat-icon red">🚫</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ outOfStockProducts.length }}</div>
+        <div class="stat-label">Out of Stock</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Low Stock Alert -->
+  @if (lowStockProducts.length > 0 || outOfStockProducts.length > 0) {
+    <div class="section">
+      <h2 class="section-title warning-title">⚠️ Stock Alerts</h2>
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Current</th>
+              <th>Color</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of outOfStockProducts; track p.id) {
+              <tr>
+                <td><strong>{{ p.name }}</strong></td>
+                <td>{{ p.category }}</td>
+                <td>0 {{ p.unit }}</td>
+                <td>{{ p.minStock }} {{ p.unit }}</td>
+                <td><span class="badge badge-out">Out of Stock</span></td>
+                <td><a routerLink="/products" class="btn-link">Restock</a></td>
+              </tr>
+            }
+            @for (p of lowStockProducts; track p.id) {
+              <tr>
+                <td><strong>{{ p.name }}</strong></td>
+                <td>{{ p.category }}</td>
+                <td>{{ p.quantity }} {{ p.unit }}</td>
+                <td>{{ p.minStock }} {{ p.unit }}</td>
+                <td><span class="badge badge-low">Low Stock</span></td>
+                <td><a routerLink="/products" class="btn-link">Restock</a></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Recent Transactions -->
+  <div class="section">
+    <div class="section-header">
+      <h2 class="section-title">Recent Transactions</h2>
+      <a routerLink="/transactions" class="btn-link">View All →</a>
+    </div>
+
+    @if (recentTransactions.length === 0) {
+      <div class="empty">
+        <div class="empty-icon">📋</div>
+        <p>No transactions yet.</p>
+        <p>Go to <a routerLink="/products" class="btn-link">Products</a> and add stock to get started.</p>
+      </div>
+    } @else {
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date & Time</th>
+              <th>Product</th>
+              <th>Type</th>
+              <th>Quantity</th>
+              <th>Stock Change</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (txn of recentTransactions; track txn.id) {
+              <tr>
+                <td class="text-muted">{{ txn.date | date:'dd/MM/yy HH:mm' }}</td>
+                <td><strong>{{ txn.productName }}</strong></td>
+                <td>
+                  <span class="badge" [class.badge-in]="txn.type === 'in'" [class.badge-out]="txn.type === 'out'">
+                    {{ txn.type === 'in' ? '+ In' : '- Out' }}
+                  </span>
+                </td>
+                <td>{{ txn.quantity }}</td>
+                <td class="text-muted">{{ txn.stockBefore }} → {{ txn.stockAfter }}</td>
+                <td class="text-muted">{{ txn.note || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

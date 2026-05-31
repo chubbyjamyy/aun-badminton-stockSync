@@ -1,0 +1,95 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Transaction History</h1>
+      <span class="subtitle">Full log of all stock movements</span>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="txn-stats">
+    <div class="txn-stat txn-stat-total">
+      <span class="txn-stat-value">{{ transactions.length }}</span>
+      <span class="txn-stat-label">Total Transactions</span>
+    </div>
+    <div class="txn-stat txn-stat-in">
+      <span class="txn-stat-value">+{{ totalIn }}</span>
+      <span class="txn-stat-label">Total Stocked In</span>
+    </div>
+    <div class="txn-stat txn-stat-out">
+      <span class="txn-stat-value">-{{ totalOut }}</span>
+      <span class="txn-stat-label">Total Stocked Out</span>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="type-filters">
+      <button class="filter-btn" [class.active]="filterType === 'all'" (click)="filterType = 'all'">All</button>
+      <button class="filter-btn filter-in" [class.active]="filterType === 'in'" (click)="filterType = 'in'">Stock In</button>
+      <button class="filter-btn filter-out" [class.active]="filterType === 'out'" (click)="filterType = 'out'">Stock Out</button>
+    </div>
+    <input
+      type="text"
+      class="search-input"
+      placeholder="Search product or note..."
+      [(ngModel)]="searchText"
+    />
+  </div>
+
+  <!-- Transactions Table -->
+  <div class="section">
+    @if (filteredTransactions.length === 0) {
+      <div class="empty">
+        <div class="empty-icon">📋</div>
+        @if (transactions.length === 0) {
+          <p>No transactions yet. Use the <strong>Stock</strong> button on a product to record movements.</p>
+        } @else {
+          <p>No transactions match your filter.</p>
+        }
+      </div>
+    } @else {
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date & Time</th>
+              <th>Product</th>
+              <th>Type</th>
+              <th>Qty</th>
+              <th>Before</th>
+              <th>After</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (txn of filteredTransactions; track txn.id; let i = $index) {
+              <tr>
+                <td class="text-muted">{{ i + 1 }}</td>
+                <td class="text-muted nowrap">{{ txn.date | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td><strong>{{ txn.productName }}</strong></td>
+                <td>
+                  <span class="badge" [class.badge-in]="txn.type === 'in'" [class.badge-out]="txn.type === 'out'">
+                    {{ txn.type === 'in' ? '+ Stock In' : '- Stock Out' }}
+                  </span>
+                </td>
+                <td><strong>{{ txn.quantity }}</strong></td>
+                <td class="text-muted">{{ txn.stockBefore }}</td>
+                <td>
+                  <span [class.text-green]="txn.type === 'in'" [class.text-red]="txn.type === 'out'">
+                    {{ txn.stockAfter }}
+                  </span>
+                </td>
+                <td class="text-muted">{{ txn.note || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        Showing {{ filteredTransactions.length }} of {{ transactions.length }} transactions
+      </div>
+    }
+  </div>
+</div>

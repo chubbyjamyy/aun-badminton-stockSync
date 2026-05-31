@@ -1,0 +1,216 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Products</h1>
+      <span class="subtitle">Manage your badminton store inventory</span>
+    </div>
+    <button class="btn btn-primary" (click)="openAddModal()">+ Add Product</button>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <input type="text" class="search-input" placeholder="Search products..." [(ngModel)]="searchText" />
+      <select class="select-filter" [(ngModel)]="filterCategory">
+        <option value="">All Categories</option>
+        @for (cat of categories; track cat) {
+        <option [value]="cat">{{ cat }}</option>
+        }
+      </select>
+    </div>
+    <span class="text-muted">{{ filteredProducts.length }} product(s)</span>
+  </div>
+
+  <!-- Products Table -->
+  <div class="section">
+    @if (filteredProducts.length === 0) {
+    <div class="empty">
+      <div class="empty-icon">📦</div>
+      @if (products.length === 0) {
+      <p>No products yet. Click <strong>+ Add Product</strong> to get started.</p>
+      } @else {
+      <p>No products match your search.</p>
+      }
+    </div>
+    } @else {
+    <div class="table-wrapper">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th>Category</th>
+            <th>Stock</th>
+            <th>Color</th>
+            <th>Unit Cost</th>
+            <th>Unit Price</th>
+            <th>Total Profit</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of filteredProducts; track p.id) {
+          <tr>
+            <td><strong>{{ p.name }}</strong></td>
+            <td>{{ p.category }}</td>
+            <td [class.stock-warning]="p.quantity < 5">{{ p.quantity }} {{ p.unit }}</td>
+            <td>
+              <div class="color-cell">
+                @if (p.colorHex) {
+                <span class="color-dot" [style.background]="p.colorHex"></span>
+                }
+                <span>{{ p.colorName || '—' }}</span>
+              </div>
+            </td>
+            <td>{{ p.cost }} ฿</td>
+            <td>{{ p.price }} ฿</td>
+            <td [class.profit-pos]="(p.price - p.cost) * p.quantity > 0"
+              [class.profit-neg]="(p.price - p.cost) * p.quantity < 0">
+              {{ (p.price - p.cost) * p.quantity }} ฿
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn btn-sm btn-stock" (click)="openStockModal(p)">Stock</button>
+                <button class="btn btn-sm btn-secondary" (click)="openEditModal(p)">Edit</button>
+                <button class="btn btn-sm btn-danger" (click)="deleteProduct(p)">Del</button>
+              </div>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </div>
+</div>
+
+<!-- Add / Edit Product Modal -->
+@if (showProductModal) {
+<div class="modal-overlay" (click)="showProductModal = false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h2 class="modal-title">{{ editingProduct ? 'Edit Product' : 'Add Product' }}</h2>
+
+    <form [formGroup]="productForm" (ngSubmit)="saveProduct()">
+      <div class="form-group">
+        <label class="form-label">Product Name *</label>
+        <input type="text" class="form-control" formControlName="name"
+          [class.error]="productForm.get('name')?.invalid && productForm.get('name')?.touched"
+          placeholder="e.g. Yonex Astrox 99" />
+        @if (productForm.get('name')?.invalid && productForm.get('name')?.touched) {
+        <div class="form-error">Product name is required.</div>
+        }
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Category *</label>
+          <select class="form-control" formControlName="category"
+            [class.error]="productForm.get('category')?.invalid && productForm.get('category')?.touched">
+            <option value="">Select category</option>
+            @for (cat of categories; track cat) {
+            <option [value]="cat">{{ cat }}</option>
+            }
+          </select>
+          @if (productForm.get('category')?.invalid && productForm.get('category')?.touched) {
+          <div class="form-error">Category is required.</div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Color *</label>
+          <div class="color-input-row">
+            <input type="color" class="color-picker" formControlName="colorHex" />
+            <input type="text" class="form-control" formControlName="colorName" placeholder="e.g. Red, Blue, สีแดง" />
+          </div>
+          @if (productForm.get('colorName')?.invalid && productForm.get('colorName')?.touched) {
+          <div class="form-error">Color is required.</div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Unit *</label>
+          <select class="form-control" formControlName="unit">
+            @for (u of units; track u) {
+            <option [value]="u">{{ u }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Initial Quantity</label>
+          <input type="number" class="form-control" formControlName="quantity" min="0" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Unit Cost (฿)</label>
+          <input type="number" class="form-control" formControlName="cost" min="0" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unit Price (฿)</label>
+          <input type="number" class="form-control" formControlName="price" min="0" step="0.01" />
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="showProductModal = false">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          {{ editingProduct ? 'Save Changes' : 'Add Product' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+}
+
+<!-- Stock Adjustment Modal -->
+@if (showStockModal && stockProduct) {
+<div class="modal-overlay" (click)="showStockModal = false">
+  <div class="modal modal-sm" (click)="$event.stopPropagation()">
+    <h2 class="modal-title">Adjust Stock</h2>
+    <div class="product-info-box">
+      <strong>{{ stockProduct.name }}</strong>
+      <span>Current stock: <strong>{{ stockProduct.quantity }} {{ stockProduct.unit }}</strong></span>
+    </div>
+
+    <form [formGroup]="stockForm" (ngSubmit)="saveStock()">
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <div class="type-selector">
+          <label class="type-option" [class.selected]="stockForm.get('type')?.value === 'in'">
+            <input type="radio" formControlName="type" value="in" /> Stock In (+)
+          </label>
+          <label class="type-option" [class.selected]="stockForm.get('type')?.value === 'out'">
+            <input type="radio" formControlName="type" value="out" /> Stock Out (-)
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Quantity *</label>
+        <input type="number" class="form-control" formControlName="quantity" min="1"
+          [class.error]="stockForm.get('quantity')?.invalid && stockForm.get('quantity')?.touched" />
+        @if (stockForm.get('quantity')?.invalid && stockForm.get('quantity')?.touched) {
+        <div class="form-error">Quantity must be at least 1.</div>
+        }
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Note (optional)</label>
+        <input type="text" class="form-control" formControlName="note" placeholder="e.g. Purchase order #123" />
+      </div>
+
+      @if (stockError) {
+      <div class="form-error stock-error">{{ stockError }}</div>
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="showStockModal = false">Cancel</button>
+        <button type="submit" class="btn btn-primary">Confirm</button>
+      </div>
+    </form>
+  </div>
+</div>
+}
