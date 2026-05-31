@@ -89,7 +89,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
     this.showProductModal = true;
   }
 
-  saveProduct(): void {
+  async saveProduct(): Promise<void> {
     if (this.productForm.invalid) {
       this.productForm.markAllAsTouched();
       return;
@@ -107,16 +107,16 @@ export class ProductsComponent implements OnInit, OnDestroy {
       colorHex: v.colorHex ?? '',
     };
     if (this.editingProduct) {
-      this.stockService.updateProduct(this.editingProduct.id, data);
+      await this.stockService.updateProduct(this.editingProduct.id, data);
     } else {
-      this.stockService.addProduct(data);
+      await this.stockService.addProduct(data);
     }
     this.showProductModal = false;
   }
 
-  deleteProduct(product: Product): void {
+  async deleteProduct(product: Product): Promise<void> {
     if (confirm(`Delete "${product.name}"? This action cannot be undone.`)) {
-      this.stockService.deleteProduct(product.id);
+      await this.stockService.deleteProduct(product.id);
     }
   }
 
@@ -140,13 +140,13 @@ export class ProductsComponent implements OnInit, OnDestroy {
     );
   }
 
-  saveStock(): void {
+  async saveStock(): Promise<void> {
     if (this.stockForm.invalid) {
       this.stockForm.markAllAsTouched();
       return;
     }
     const v = this.stockForm.value;
-    const success = this.stockService.adjustStock(
+    const success = await this.stockService.adjustStock(
       this.stockProduct!.id,
       v.type as 'in' | 'out',
       Number(v.quantity),

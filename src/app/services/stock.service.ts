@@ -1,17 +1,25 @@
 import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { BehaviorSubject } from 'rxjs';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Product } from '../models/product.model';
 import { Transaction } from '../models/transaction.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class StockService {
   private platformId = inject(PLATFORM_ID);
-  private readonly PRODUCTS_KEY = 'bss_products';
-  private readonly TRANSACTIONS_KEY = 'bss_transactions';
+  private supabase: SupabaseClient;
 
-  private products$ = new BehaviorSubject<Product[]>(this.loadProducts());
-  private transactions$ = new BehaviorSubject<Transaction[]>(this.loadTransactions());
+  private products$ = new BehaviorSubject<Product[]>([]);
+  private transactions$ = new BehaviorSubject<Transaction[]>([]);
+
+  constructor() {
+    this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey);
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadAll();
+    }
+  }
 
   get products() {
     return this.products$.asObservable();
@@ -25,60 +33,107 @@ export class StockService {
     return this.products$.getValue();
   }
 
-  private isBrowser(): boolean {
-    return isPlatformBrowser(this.platformId);
+  private async loadAll(): Promise<void> {
+    const [{ data: products }, { data: transactions }] = await Promise.all([
+      this.supabase.from('products').select('*').order('created_at'),
+      this.supabase.from('transactions').select('*').order('date', { ascending: false }),
+    ]);
+    this.products$.next((products ?? []).map(this.toProduct));
+    this.transactions$.next((transactions ?? []).map(this.toTransaction));
   }
 
-  private loadProducts(): Product[] {
-    if (!this.isBrowser()) return [];
-    return JSON.parse(localStorage.getItem(this.PRODUCTS_KEY) ?? '[]');
+  private toProduct(row: Record<string, unknown>): Product {
+    return {
+      id: row['id'] as string,
+      name: row['name'] as string,
+      category: row['category'] as string,
+      unit: row['unit'] as string,
+      quantity: Number(row['quantity']),
+      minStock: Number(row['min_stock']),
+      price: Number(row['price']),
+      cost: Number(row['cost']),
+      colorName: row['color_name'] as string | undefined,
+      colorHex: row['color_hex'] as string | undefined,
+      createdAt: row['created_at'] as string,
+    };
   }
 
-  private loadTransactions(): Transaction[] {
-    if (!this.isBrowser()) return [];
-    return JSON.parse(localStorage.getItem(this.TRANSACTIONS_KEY) ?? '[]');
+  private toTransaction(row: Record<string, unknown>): Transaction {
+    return {
+      id: row['id'] as string,
+      productId: row['product_id'] as string,
+      productName: row['product_name'] as string,
+      type: row['type'] as 'in' | 'out',
+      quantity: Number(row['quantity']),
+      note: (row['note'] as string) ?? '',
+      date: row['date'] as string,
+      stockBefore: Number(row['stock_before']),
+      stockAfter: Number(row['stock_after']),
+      purchaseCost: row['purchase_cost'] != null ? Number(row['purchase_cost']) : undefined,
+      costBefore: row['cost_before'] != null ? Number(row['cost_before']) : undefined,
+      costAfter: row['cost_after'] != null ? Number(row['cost_after']) : undefined,
+      sellPrice: row['sell_price'] != null ? Number(row['sell_price']) : undefined,
+    };
   }
 
-  private saveProducts(products: Product[]): void {
-    if (this.isBrowser()) {
-      localStorage.setItem(this.PRODUCTS_KEY, JSON.stringify(products));
-    }
-    this.products$.next(products);
+  async addProduct(data: Omit<Product, 'id' | 'createdAt'>): Promise<void> {
+    const { data: row, error } = await this.supabase
+      .from('products')
+      .insert({
+        name: data.name,
+        category: data.category,
+        unit: data.unit,
+        quantity: data.quantity,
+        min_stock: data.minStock,
+        price: data.price,
+        cost: data.cost,
+        color_name: data.colorName,
+        color_hex: data.colorHex,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    this.products$.next([...this.products$.getValue(), this.toProduct(row)]);
   }
 
-  private saveTransactions(transactions: Transaction[]): void {
-    if (this.isBrowser()) {
-      localStorage.setItem(this.TRANSACTIONS_KEY, JSON.stringify(transactions));
-    }
-    this.transactions$.next(transactions);
-  }
+  async updateProduct(id: string, updates: Partial<Omit<Product, 'id' | 'createdAt'>>): Promise<void> {
+    const patch: Record<string, unknown> = {};
+    if (updates.name !== undefined) patch['name'] = updates.name;
+    if (updates.category !== undefined) patch['category'] = updates.category;
+    if (updates.unit !== undefined) patch['unit'] = updates.unit;
+    if (updates.quantity !== undefined) patch['quantity'] = updates.quantity;
+    if (updates.minStock !== undefined) patch['min_stock'] = updates.minStock;
+    if (updates.price !== undefined) patch['price'] = updates.price;
+    if (updates.cost !== undefined) patch['cost'] = updates.cost;
+    if (updates.colorName !== undefined) patch['color_name'] = updates.colorName;
+    if (updates.colorHex !== undefined) patch['color_hex'] = updates.colorHex;
 
-  addProduct(data: Omit<Product, 'id' | 'createdAt'>): void {
-    const products = [...this.products$.getValue()];
-    products.push({ ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() });
-    this.saveProducts(products);
-  }
-
-  updateProduct(id: string, updates: Partial<Omit<Product, 'id' | 'createdAt'>>): void {
-    const products = this.products$.getValue().map((p) =>
-      p.id === id ? { ...p, ...updates } : p
+    const { data: row, error } = await this.supabase
+      .from('products')
+      .update(patch)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    this.products$.next(
+      this.products$.getValue().map((p) => (p.id === id ? this.toProduct(row) : p))
     );
-    this.saveProducts(products);
   }
 
-  deleteProduct(id: string): void {
-    this.saveProducts(this.products$.getValue().filter((p) => p.id !== id));
+  async deleteProduct(id: string): Promise<void> {
+    const { error } = await this.supabase.from('products').delete().eq('id', id);
+    if (error) throw error;
+    this.products$.next(this.products$.getValue().filter((p) => p.id !== id));
   }
 
-  adjustStock(
+  async adjustStock(
     productId: string,
     type: 'in' | 'out',
     quantity: number,
     note: string,
     purchaseCost?: number
-  ): boolean {
-    const products = this.products$.getValue();
-    const product = products.find((p) => p.id === productId);
+  ): Promise<boolean> {
+    const product = this.products$.getValue().find((p) => p.id === productId);
     if (!product) return false;
 
     const stockBefore = product.quantity;
@@ -87,8 +142,6 @@ export class StockService {
 
     const costBefore = product.cost;
     let costAfter = costBefore;
-
-    // Recalculate weighted average cost on stock in
     if (type === 'in' && purchaseCost !== undefined && purchaseCost >= 0) {
       costAfter =
         stockAfter > 0
@@ -96,24 +149,29 @@ export class StockService {
           : purchaseCost;
     }
 
-    this.updateProduct(productId, { quantity: stockAfter, cost: costAfter });
+    await this.updateProduct(productId, { quantity: stockAfter, cost: costAfter });
 
-    const transaction: Transaction = {
-      id: crypto.randomUUID(),
-      productId,
-      productName: product.name,
-      type,
-      quantity,
-      note,
-      date: new Date().toISOString(),
-      stockBefore,
-      stockAfter,
-      purchaseCost: type === 'in' ? purchaseCost : undefined,
-      costBefore,
-      costAfter,
-      sellPrice: product.price,
-    };
-    this.saveTransactions([transaction, ...this.transactions$.getValue()]);
+    const { data: txRow, error } = await this.supabase
+      .from('transactions')
+      .insert({
+        product_id: productId,
+        product_name: product.name,
+        type,
+        quantity,
+        note,
+        date: new Date().toISOString(),
+        stock_before: stockBefore,
+        stock_after: stockAfter,
+        purchase_cost: type === 'in' ? (purchaseCost ?? null) : null,
+        cost_before: costBefore,
+        cost_after: costAfter,
+        sell_price: product.price,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+
+    this.transactions$.next([this.toTransaction(txRow), ...this.transactions$.getValue()]);
     return true;
   }
 }
