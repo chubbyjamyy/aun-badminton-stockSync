@@ -9,14 +9,14 @@ import { environment } from '../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class StockService {
   private platformId = inject(PLATFORM_ID);
-  private supabase: SupabaseClient;
+  private supabase!: SupabaseClient;
 
   private products$ = new BehaviorSubject<Product[]>([]);
   private transactions$ = new BehaviorSubject<Transaction[]>([]);
 
   constructor() {
-    this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey);
     if (isPlatformBrowser(this.platformId)) {
+      this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey);
       this.loadAll();
     }
   }
@@ -77,6 +77,7 @@ export class StockService {
   }
 
   async addProduct(data: Omit<Product, 'id' | 'createdAt'>): Promise<void> {
+    if (!this.supabase) return;
     const { data: row, error } = await this.supabase
       .from('products')
       .insert({
@@ -97,6 +98,7 @@ export class StockService {
   }
 
   async updateProduct(id: string, updates: Partial<Omit<Product, 'id' | 'createdAt'>>): Promise<void> {
+    if (!this.supabase) return;
     const patch: Record<string, unknown> = {};
     if (updates.name !== undefined) patch['name'] = updates.name;
     if (updates.category !== undefined) patch['category'] = updates.category;
@@ -121,6 +123,7 @@ export class StockService {
   }
 
   async deleteProduct(id: string): Promise<void> {
+    if (!this.supabase) return;
     const { error } = await this.supabase.from('products').delete().eq('id', id);
     if (error) throw error;
     this.products$.next(this.products$.getValue().filter((p) => p.id !== id));
@@ -133,6 +136,7 @@ export class StockService {
     note: string,
     purchaseCost?: number
   ): Promise<boolean> {
+    if (!this.supabase) return false;
     const product = this.products$.getValue().find((p) => p.id === productId);
     if (!product) return false;
 
