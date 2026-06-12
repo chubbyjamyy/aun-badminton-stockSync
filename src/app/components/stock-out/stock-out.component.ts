@@ -45,9 +45,9 @@ export class StockOutComponent implements OnInit, OnDestroy {
   }
 
   get filteredProducts(): Product[] {
-    return this.products.filter((p) =>
-      p.name.toLowerCase().includes(this.searchText.toLowerCase())
-    );
+    return this.products
+      .filter((p) => p.name.toLowerCase().includes(this.searchText.toLowerCase()))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   get optionalsExtra(): number {
