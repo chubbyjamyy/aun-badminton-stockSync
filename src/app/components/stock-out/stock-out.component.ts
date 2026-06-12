@@ -6,6 +6,9 @@ import { Subscription } from 'rxjs';
 import { StockService } from '../../services/stock.service';
 import { Product } from '../../models/product.model';
 
+const KNOTS_PRICE = 20;
+const GROMMET_PRICE = 5;
+
 @Component({
   selector: 'app-stock-out',
   standalone: true,
@@ -14,6 +17,7 @@ import { Product } from '../../models/product.model';
   styleUrl: './stock-out.component.css',
 })
 export class StockOutComponent implements OnInit, OnDestroy {
+  readonly Math = Math;
   private stockService = inject(StockService);
   private fb = inject(FormBuilder);
   private sub = new Subscription();
@@ -27,6 +31,8 @@ export class StockOutComponent implements OnInit, OnDestroy {
 
   stockForm = this.fb.group({
     quantity: [1, [Validators.required, Validators.min(1)]],
+    knots: [false],
+    grommets: [0, [Validators.min(0)]],
     note: [''],
   });
 
@@ -44,10 +50,20 @@ export class StockOutComponent implements OnInit, OnDestroy {
     );
   }
 
+  get optionalsExtra(): number {
+    const knots = this.stockForm.get('knots')?.value ? KNOTS_PRICE : 0;
+    const grommets = (Number(this.stockForm.get('grommets')?.value) || 0) * GROMMET_PRICE;
+    return knots + grommets;
+  }
+
+  get effectiveSellPrice(): number {
+    return (this.stockProduct?.price ?? 0) + this.optionalsExtra;
+  }
+
   openStockOutModal(product: Product): void {
     this.stockProduct = product;
     this.stockError = '';
-    this.stockForm.reset({ quantity: 1, note: '' });
+    this.stockForm.reset({ quantity: 1, knots: false, grommets: 0, note: '' });
     this.showStockModal = true;
   }
 
@@ -61,7 +77,9 @@ export class StockOutComponent implements OnInit, OnDestroy {
       this.stockProduct!.id,
       'out',
       Number(v.quantity),
-      v.note ?? ''
+      v.note ?? '',
+      undefined,
+      this.effectiveSellPrice
     );
     if (!success) {
       this.stockError = 'Cannot reduce stock below 0.';

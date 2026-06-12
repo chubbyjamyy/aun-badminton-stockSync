@@ -6,6 +6,9 @@ import { Subscription } from 'rxjs';
 import { StockService } from '../../services/stock.service';
 import { Product, CATEGORIES, UNITS } from '../../models/product.model';
 
+const KNOTS_PRICE = 20;
+const GROMMET_PRICE = 5;
+
 @Component({
   selector: 'app-products',
   standalone: true,
@@ -14,6 +17,7 @@ import { Product, CATEGORIES, UNITS } from '../../models/product.model';
   styleUrl: './products.component.css',
 })
 export class ProductsComponent implements OnInit, OnDestroy {
+  readonly Math = Math;
   private stockService = inject(StockService);
   private fb = inject(FormBuilder);
   private sub = new Subscription();
@@ -49,6 +53,8 @@ export class ProductsComponent implements OnInit, OnDestroy {
     quantity: [1, [Validators.required, Validators.min(1)]],
     note: [''],
     purchaseCost: [0, [Validators.required, Validators.min(0)]],
+    knots: [false],
+    grommets: [0, [Validators.min(0)]],
   });
 
   ngOnInit(): void {
@@ -123,8 +129,19 @@ export class ProductsComponent implements OnInit, OnDestroy {
   openStockModal(product: Product): void {
     this.stockProduct = product;
     this.stockError = '';
-    this.stockForm.reset({ type: 'in', quantity: 1, note: '', purchaseCost: product.cost });
+    this.stockForm.reset({ type: 'in', quantity: 1, note: '', purchaseCost: product.cost, knots: false, grommets: 0 });
     this.showStockModal = true;
+  }
+
+  get optionalsExtra(): number {
+    if (this.stockForm.get('type')?.value !== 'out') return 0;
+    const knots = this.stockForm.get('knots')?.value ? KNOTS_PRICE : 0;
+    const grommets = (Number(this.stockForm.get('grommets')?.value) || 0) * GROMMET_PRICE;
+    return knots + grommets;
+  }
+
+  get effectiveSellPrice(): number {
+    return (this.stockProduct?.price ?? 0) + this.optionalsExtra;
   }
 
   get newAvgCost(): number {
@@ -151,7 +168,8 @@ export class ProductsComponent implements OnInit, OnDestroy {
       v.type as 'in' | 'out',
       Number(v.quantity),
       v.note ?? '',
-      v.type === 'in' ? Number(v.purchaseCost) : undefined
+      v.type === 'in' ? Number(v.purchaseCost) : undefined,
+      v.type === 'out' ? this.effectiveSellPrice : undefined
     );
     if (!success) {
       this.stockError = 'Cannot reduce stock below 0.';

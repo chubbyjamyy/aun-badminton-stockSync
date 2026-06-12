@@ -134,7 +134,8 @@ export class StockService {
     type: 'in' | 'out',
     quantity: number,
     note: string,
-    purchaseCost?: number
+    purchaseCost?: number,
+    sellPriceOverride?: number
   ): Promise<boolean> {
     if (!this.supabase) return false;
     const product = this.products$.getValue().find((p) => p.id === productId);
@@ -169,7 +170,7 @@ export class StockService {
         purchase_cost: type === 'in' ? (purchaseCost ?? null) : null,
         cost_before: costBefore,
         cost_after: costAfter,
-        sell_price: product.price,
+        sell_price: sellPriceOverride ?? product.price,
       })
       .select()
       .single();

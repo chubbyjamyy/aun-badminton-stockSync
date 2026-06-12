@@ -83,6 +83,39 @@
         }
       </div>
 
+      <!-- Optionals -->
+      <div class="optionals-section">
+        <div class="optionals-label">Optionals</div>
+
+        <!-- Knots -->
+        <label class="optional-row" [class.optional-selected]="stockForm.get('knots')?.value">
+          <input type="checkbox" formControlName="knots" />
+          <span class="optional-name">4 Knots</span>
+          <span class="optional-price">+20 ฿</span>
+        </label>
+
+        <!-- Grommets -->
+        <div class="optional-row optional-stepper-row">
+          <span class="optional-name">Grommets</span>
+          <span class="optional-price">+{{ (stockForm.get('grommets')?.value || 0) * 5 }} ฿ (×5 ฿ each)</span>
+          <div class="stepper">
+            <button type="button" class="stepper-btn"
+              (click)="stockForm.get('grommets')!.setValue(Math.max(0, (stockForm.get('grommets')?.value || 0) - 1))">−</button>
+            <span class="stepper-value">{{ stockForm.get('grommets')?.value || 0 }}</span>
+            <button type="button" class="stepper-btn"
+              (click)="stockForm.get('grommets')!.setValue((stockForm.get('grommets')?.value || 0) + 1)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Price preview -->
+      @if (optionalsExtra > 0) {
+      <div class="price-preview">
+        <span>Sell price for this transaction:</span>
+        <span class="price-preview-value">{{ stockProduct.price }} ฿ + {{ optionalsExtra }} ฿ = {{ effectiveSellPrice }} ฿</span>
+      </div>
+      }
+
       <div class="form-group">
         <label class="form-label">Note (optional)</label>
         <input type="text" class="form-control" formControlName="note" placeholder="e.g. Sold to customer" />
