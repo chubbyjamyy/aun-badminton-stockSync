@@ -16,6 +16,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'stock-out',
+    loadComponent: () =>
+      import('./components/stock-out/stock-out.component').then(
+        (m) => m.StockOutComponent
+      ),
+  },
+  {
     path: 'transactions',
     loadComponent: () =>
       import('./components/transactions/transactions.component').then(

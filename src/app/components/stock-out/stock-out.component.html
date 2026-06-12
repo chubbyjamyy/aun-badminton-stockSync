@@ -1,0 +1,102 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Stock Out</h1>
+      <span class="subtitle">Record stock going out of inventory</span>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="toolbar">
+    <input type="text" class="search-input" placeholder="Search products..." [(ngModel)]="searchText" />
+    <span class="text-muted">{{ filteredProducts.length }} product(s)</span>
+  </div>
+
+  <!-- Products Table -->
+  <div class="section">
+    @if (filteredProducts.length === 0) {
+    <div class="empty">
+      <div class="empty-icon">📦</div>
+      <p>No products found.</p>
+    </div>
+    } @else {
+    <div class="table-wrapper">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th>Color</th>
+            <th>Stock</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of filteredProducts; track p.id) {
+          <tr>
+            <td><strong>{{ p.name }}</strong></td>
+            <td>
+              <div class="color-cell">
+                @if (p.colorHex) {
+                <span class="color-dot" [style.background]="p.colorHex"></span>
+                }
+                <span>{{ p.colorName || '—' }}</span>
+              </div>
+            </td>
+            <td [class.stock-warning]="p.quantity < 5">{{ p.quantity }} {{ p.unit }}</td>
+            <td>
+              <button class="btn btn-sm btn-out" (click)="openStockOutModal(p)" [disabled]="p.quantity === 0">
+                Stock Out
+              </button>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </div>
+</div>
+
+<!-- Stock Out Modal -->
+@if (showStockModal && stockProduct) {
+<div class="modal-overlay" (click)="showStockModal = false">
+  <div class="modal modal-sm" (click)="$event.stopPropagation()">
+    <h2 class="modal-title">Stock Out</h2>
+    <div class="product-info-box">
+      <strong>{{ stockProduct.name }}</strong>
+      @if (stockProduct.colorName) {
+      <span class="color-row">
+        <span class="color-dot" [style.background]="stockProduct.colorHex"></span>
+        {{ stockProduct.colorName }}
+      </span>
+      }
+      <span>Current stock: <strong>{{ stockProduct.quantity }} {{ stockProduct.unit }}</strong></span>
+    </div>
+
+    <form [formGroup]="stockForm" (ngSubmit)="saveStockOut()">
+      <div class="form-group">
+        <label class="form-label">Quantity *</label>
+        <input type="number" class="form-control" formControlName="quantity" min="1"
+          [class.error]="stockForm.get('quantity')?.invalid && stockForm.get('quantity')?.touched" />
+        @if (stockForm.get('quantity')?.invalid && stockForm.get('quantity')?.touched) {
+        <div class="form-error">Quantity must be at least 1.</div>
+        }
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Note (optional)</label>
+        <input type="text" class="form-control" formControlName="note" placeholder="e.g. Sold to customer" />
+      </div>
+
+      @if (stockError) {
+      <div class="form-error stock-error">{{ stockError }}</div>
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="showStockModal = false">Cancel</button>
+        <button type="submit" class="btn btn-out-confirm">Confirm Stock Out</button>
+      </div>
+    </form>
+  </div>
+</div>
+}
