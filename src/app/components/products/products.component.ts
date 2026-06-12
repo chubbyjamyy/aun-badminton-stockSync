@@ -66,11 +66,13 @@ export class ProductsComponent implements OnInit, OnDestroy {
   }
 
   get filteredProducts(): Product[] {
-    return this.products.filter((p) => {
-      const matchSearch = p.name.toLowerCase().includes(this.searchText.toLowerCase());
-      const matchCat = !this.filterCategory || p.category === this.filterCategory;
-      return matchSearch && matchCat;
-    });
+    return this.products
+      .filter((p) => {
+        const matchSearch = p.name.toLowerCase().includes(this.searchText.toLowerCase());
+        const matchCat = !this.filterCategory || p.category === this.filterCategory;
+        return matchSearch && matchCat;
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   openAddModal(): void {
