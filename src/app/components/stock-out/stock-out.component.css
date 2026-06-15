@@ -189,6 +189,32 @@
   border-radius: 6px;
 }
 
+.stock-out-table {
+  table-layout: fixed;
+}
+
+.stock-out-table th,
+.stock-out-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-group {
+  margin-bottom: 24px;
+}
+
+.category-heading {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  padding: 6px 4px;
+  margin-bottom: 6px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
 .stock-warning {
   color: #ea580c;
   font-weight: 600;

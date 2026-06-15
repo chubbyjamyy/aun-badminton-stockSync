@@ -129,6 +129,35 @@ export class StockService {
     this.products$.next(this.products$.getValue().filter((p) => p.id !== id));
   }
 
+  async updateTransaction(id: string, patch: { note?: string; sellPrice?: number | null; purchaseCost?: number | null; date?: string; productId?: string; productName?: string }): Promise<void> {
+    if (!this.supabase) return;
+    const dbPatch: Record<string, unknown> = {};
+    if (patch.note !== undefined) dbPatch['note'] = patch.note;
+    if ('sellPrice' in patch) dbPatch['sell_price'] = patch.sellPrice ?? null;
+    if ('purchaseCost' in patch) dbPatch['purchase_cost'] = patch.purchaseCost ?? null;
+    if (patch.date !== undefined) dbPatch['date'] = patch.date;
+    if (patch.productId !== undefined) dbPatch['product_id'] = patch.productId;
+    if (patch.productName !== undefined) dbPatch['product_name'] = patch.productName;
+
+    const { data: row, error } = await this.supabase
+      .from('transactions')
+      .update(dbPatch)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    this.transactions$.next(
+      this.transactions$.getValue().map((t) => (t.id === id ? this.toTransaction(row) : t))
+    );
+  }
+
+  async deleteTransaction(id: string): Promise<void> {
+    if (!this.supabase) return;
+    const { error } = await this.supabase.from('transactions').delete().eq('id', id);
+    if (error) throw error;
+    this.transactions$.next(this.transactions$.getValue().filter((t) => t.id !== id));
+  }
+
   async adjustStock(
     productId: string,
     type: 'in' | 'out',

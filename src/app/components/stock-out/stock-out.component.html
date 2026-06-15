@@ -12,47 +12,58 @@
     <span class="text-muted">{{ filteredProducts.length }} product(s)</span>
   </div>
 
-  <!-- Products Table -->
+  <!-- Products grouped by category -->
   <div class="section">
     @if (filteredProducts.length === 0) {
-    <div class="empty">
-      <div class="empty-icon">📦</div>
-      <p>No products found.</p>
-    </div>
+      <div class="empty">
+        <div class="empty-icon">📦</div>
+        <p>No products found.</p>
+      </div>
     } @else {
-    <div class="table-wrapper">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Product Name</th>
-            <th>Color</th>
-            <th>Stock</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (p of filteredProducts; track p.id) {
-          <tr>
-            <td><strong>{{ p.name }}</strong></td>
-            <td>
-              <div class="color-cell">
-                @if (p.colorHex) {
-                <span class="color-dot" [style.background]="p.colorHex"></span>
+      @for (group of groupedProducts; track group.category) {
+        <div class="category-group">
+          <div class="category-heading">{{ group.category }}</div>
+          <div class="table-wrapper">
+            <table class="table stock-out-table">
+              <colgroup>
+                <col style="width:25%" />
+                <col style="width:25%" />
+                <col style="width:25%" />
+                <col style="width:25%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Product Name</th>
+                  <th>Color</th>
+                  <th>Stock</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of group.products; track p.id) {
+                  <tr>
+                    <td><strong>{{ p.name }}</strong></td>
+                    <td>
+                      <div class="color-cell">
+                        @if (p.colorHex) {
+                          <span class="color-dot" [style.background]="p.colorHex"></span>
+                        }
+                        <span>{{ p.colorName || '—' }}</span>
+                      </div>
+                    </td>
+                    <td [class.stock-warning]="p.quantity < 5">{{ p.quantity }} {{ p.unit }}</td>
+                    <td>
+                      <button class="btn btn-sm btn-out" (click)="openStockOutModal(p)" [disabled]="p.quantity === 0">
+                        Stock Out
+                      </button>
+                    </td>
+                  </tr>
                 }
-                <span>{{ p.colorName || '—' }}</span>
-              </div>
-            </td>
-            <td [class.stock-warning]="p.quantity < 5">{{ p.quantity }} {{ p.unit }}</td>
-            <td>
-              <button class="btn btn-sm btn-out" (click)="openStockOutModal(p)" [disabled]="p.quantity === 0">
-                Stock Out
-              </button>
-            </td>
-          </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
     }
   </div>
 </div>

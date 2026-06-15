@@ -50,6 +50,17 @@ export class StockOutComponent implements OnInit, OnDestroy {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  get groupedProducts(): { category: string; products: Product[] }[] {
+    const map = new Map<string, Product[]>();
+    for (const p of this.filteredProducts) {
+      if (!map.has(p.category)) map.set(p.category, []);
+      map.get(p.category)!.push(p);
+    }
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([category, products]) => ({ category, products }));
+  }
+
   get optionalsExtra(): number {
     const knots = this.stockForm.get('knots')?.value ? KNOTS_PRICE : 0;
     const grommets = (Number(this.stockForm.get('grommets')?.value) || 0) * GROMMET_PRICE;
