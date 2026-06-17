@@ -200,6 +200,17 @@
   white-space: nowrap;
 }
 
+.stock-out-table td:first-child,
+.stock-out-table th:first-child {
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  text-overflow: unset;
+  word-break: break-word;
+}
+
 .category-group {
   margin-bottom: 24px;
 }
