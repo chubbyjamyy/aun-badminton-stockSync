@@ -205,7 +205,7 @@
   white-space: normal;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   text-overflow: unset;
   word-break: break-word;
