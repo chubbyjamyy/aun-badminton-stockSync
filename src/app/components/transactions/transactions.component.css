@@ -1,3 +1,47 @@
+/* Tabs */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0;
+}
+
+.tab-btn {
+  padding: 9px 20px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.15s;
+}
+
+.tab-btn:hover { color: #1e293b; }
+
+.tab-btn.active {
+  color: #6366f1;
+  border-bottom-color: #6366f1;
+  font-weight: 600;
+}
+
+/* Profit summary stat card colors */
+.txn-stat-profit-today  { border-left-color: #f59e0b; }
+.txn-stat-profit-month  { border-left-color: #6366f1; }
+.txn-stat-profit-all    { border-left-color: #0ea5e9; }
+
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 12px 0;
+}
+
+.text-right { text-align: right; }
+
 .txn-stats {
   display: flex;
   gap: 12px;

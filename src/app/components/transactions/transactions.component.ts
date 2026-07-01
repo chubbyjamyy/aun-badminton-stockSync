@@ -24,6 +24,7 @@ export class TransactionsComponent implements OnInit, OnDestroy {
   products: Product[] = [];
   filterType: 'all' | 'in' | 'out' = 'all';
   searchText = '';
+  activeTab: 'history' | 'profit' = 'history';
 
   deletingId: string | null = null;
   editingTxn: Transaction | null = null;
@@ -43,6 +44,73 @@ export class TransactionsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.sub.unsubscribe();
+  }
+
+  private txnProfit(t: Transaction): number {
+    if (t.type !== 'out' || t.sellPrice == null || t.costBefore == null) return 0;
+    return (t.sellPrice - t.costBefore) * t.quantity;
+  }
+
+  get profitToday(): number {
+    const today = new Date().toDateString();
+    return this.transactions
+      .filter((t) => new Date(t.date).toDateString() === today)
+      .reduce((s, t) => s + this.txnProfit(t), 0);
+  }
+
+  get profitThisMonth(): number {
+    const now = new Date();
+    return this.transactions
+      .filter((t) => {
+        const d = new Date(t.date);
+        return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+      })
+      .reduce((s, t) => s + this.txnProfit(t), 0);
+  }
+
+  get profitAllTime(): number {
+    return this.transactions.reduce((s, t) => s + this.txnProfit(t), 0);
+  }
+
+  get dailyProfitRows(): { date: string; revenue: number; cost: number; profit: number }[] {
+    const map = new Map<string, { revenue: number; cost: number }>();
+    for (const t of this.transactions) {
+      if (t.type !== 'out') continue;
+      const key = new Date(t.date).toLocaleDateString('en-GB');
+      const entry = map.get(key) ?? { revenue: 0, cost: 0 };
+      entry.revenue += (t.sellPrice ?? 0) * t.quantity;
+      entry.cost += (t.costBefore ?? 0) * t.quantity;
+      map.set(key, entry);
+    }
+    return Array.from(map.entries())
+      .map(([date, v]) => ({ date, revenue: v.revenue, cost: v.cost, profit: v.revenue - v.cost }))
+      .sort((a, b) => {
+        const parse = (s: string) => s.split('/').reverse().join('-');
+        return parse(b.date).localeCompare(parse(a.date));
+      });
+  }
+
+  get monthlyProfitRows(): { month: string; revenue: number; cost: number; profit: number }[] {
+    const map = new Map<string, { revenue: number; cost: number }>();
+    for (const t of this.transactions) {
+      if (t.type !== 'out') continue;
+      const d = new Date(t.date);
+      const key = d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+      const entry = map.get(key) ?? { revenue: 0, cost: 0 };
+      entry.revenue += (t.sellPrice ?? 0) * t.quantity;
+      entry.cost += (t.costBefore ?? 0) * t.quantity;
+      map.set(key, entry);
+    }
+    return Array.from(map.entries())
+      .map(([month, v]) => ({ month, revenue: v.revenue, cost: v.cost, profit: v.revenue - v.cost }))
+      .sort((a, b) => {
+        const parse = (s: string) => {
+          const [m, y] = s.split(' ');
+          const months: Record<string, number> = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
+          return new Date(+y, months[m]).getTime();
+        };
+        return parse(b.month) - parse(a.month);
+      });
   }
 
   get filteredTransactions(): Transaction[] {

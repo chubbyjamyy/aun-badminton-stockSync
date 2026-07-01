@@ -50,8 +50,9 @@ export class StockService {
       unit: row['unit'] as string,
       quantity: Number(row['quantity']),
       minStock: Number(row['min_stock']),
-      price: Number(row['price']),
-      cost: Number(row['cost']),
+      price: Number(row['sell_price']),
+      cost: Number(row['unit_cost']),
+      profit: Number(row['profit']),
       colorName: row['color_name'] as string | undefined,
       colorHex: row['color_hex'] as string | undefined,
       createdAt: row['created_at'] as string,
@@ -76,7 +77,7 @@ export class StockService {
     };
   }
 
-  async addProduct(data: Omit<Product, 'id' | 'createdAt'>): Promise<void> {
+  async addProduct(data: Omit<Product, 'id' | 'createdAt' | 'profit'>): Promise<void> {
     if (!this.supabase) return;
     const { data: row, error } = await this.supabase
       .from('products')
@@ -86,8 +87,8 @@ export class StockService {
         unit: data.unit,
         quantity: data.quantity,
         min_stock: data.minStock,
-        price: data.price,
-        cost: data.cost,
+        sell_price: data.price,
+        unit_cost: data.cost,
         color_name: data.colorName,
         color_hex: data.colorHex,
       })
@@ -105,8 +106,8 @@ export class StockService {
     if (updates.unit !== undefined) patch['unit'] = updates.unit;
     if (updates.quantity !== undefined) patch['quantity'] = updates.quantity;
     if (updates.minStock !== undefined) patch['min_stock'] = updates.minStock;
-    if (updates.price !== undefined) patch['price'] = updates.price;
-    if (updates.cost !== undefined) patch['cost'] = updates.cost;
+    if (updates.price !== undefined) patch['sell_price'] = updates.price;
+    if (updates.cost !== undefined) patch['unit_cost'] = updates.cost;
     if (updates.colorName !== undefined) patch['color_name'] = updates.colorName;
     if (updates.colorHex !== undefined) patch['color_hex'] = updates.colorHex;
 

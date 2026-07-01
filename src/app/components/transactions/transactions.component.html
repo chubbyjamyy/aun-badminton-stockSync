@@ -6,105 +6,209 @@
     </div>
   </div>
 
-  <!-- Summary Cards -->
-  <div class="txn-stats">
-    <div class="txn-stat txn-stat-total">
-      <span class="txn-stat-value">{{ transactions.length }}</span>
-      <span class="txn-stat-label">Total Transactions</span>
-    </div>
-    <div class="txn-stat txn-stat-in">
-      <span class="txn-stat-value">+{{ totalIn }}</span>
-      <span class="txn-stat-label">Total Stocked In</span>
-    </div>
-    <div class="txn-stat txn-stat-out">
-      <span class="txn-stat-value">-{{ totalOut }}</span>
-      <span class="txn-stat-label">Total Stocked Out</span>
-    </div>
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn" [class.active]="activeTab === 'history'" (click)="activeTab = 'history'">Transaction History</button>
+    <button class="tab-btn" [class.active]="activeTab === 'profit'" (click)="activeTab = 'profit'">Profit Summary</button>
   </div>
 
-  <!-- Filter Bar -->
-  <div class="filter-bar">
-    <div class="type-filters">
-      <button class="filter-btn" [class.active]="filterType === 'all'" (click)="filterType = 'all'">All</button>
-      <button class="filter-btn filter-in" [class.active]="filterType === 'in'" (click)="filterType = 'in'">Stock In</button>
-      <button class="filter-btn filter-out" [class.active]="filterType === 'out'" (click)="filterType = 'out'">Stock Out</button>
-    </div>
-    <input
-      type="text"
-      class="search-input"
-      placeholder="Search product or note..."
-      [(ngModel)]="searchText"
-    />
-  </div>
-
-  <!-- Transactions Table -->
-  <div class="section">
-    @if (filteredTransactions.length === 0) {
-      <div class="empty">
-        <div class="empty-icon">📋</div>
-        @if (transactions.length === 0) {
-          <p>No transactions yet. Use the <strong>Stock</strong> button on a product to record movements.</p>
-        } @else {
-          <p>No transactions match your filter.</p>
-        }
+  @if (activeTab === 'history') {
+    <!-- Summary Cards -->
+    <div class="txn-stats">
+      <div class="txn-stat txn-stat-total">
+        <span class="txn-stat-value">{{ transactions.length }}</span>
+        <span class="txn-stat-label">Total Transactions</span>
       </div>
-    } @else {
-      <div class="table-wrapper">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Date & Time</th>
-              <th>Product</th>
-              <th>Type</th>
-              <th>Qty</th>
-              <th>Unit Cost</th>
-              <th>Sell Price</th>
-              <th>Profit</th>
-              <th>Note</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (txn of filteredTransactions; track txn.id; let i = $index) {
+      <div class="txn-stat txn-stat-in">
+        <span class="txn-stat-value">+{{ totalIn }}</span>
+        <span class="txn-stat-label">Total Stocked In</span>
+      </div>
+      <div class="txn-stat txn-stat-out">
+        <span class="txn-stat-value">-{{ totalOut }}</span>
+        <span class="txn-stat-label">Total Stocked Out</span>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="type-filters">
+        <button class="filter-btn" [class.active]="filterType === 'all'" (click)="filterType = 'all'">All</button>
+        <button class="filter-btn filter-in" [class.active]="filterType === 'in'" (click)="filterType = 'in'">Stock In</button>
+        <button class="filter-btn filter-out" [class.active]="filterType === 'out'" (click)="filterType = 'out'">Stock Out</button>
+      </div>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search product or note..."
+        [(ngModel)]="searchText"
+      />
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="section">
+      @if (filteredTransactions.length === 0) {
+        <div class="empty">
+          <div class="empty-icon">📋</div>
+          @if (transactions.length === 0) {
+            <p>No transactions yet. Use the <strong>Stock</strong> button on a product to record movements.</p>
+          } @else {
+            <p>No transactions match your filter.</p>
+          }
+        </div>
+      } @else {
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
               <tr>
-                <td class="text-muted">{{ i + 1 }}</td>
-                <td class="text-muted nowrap">{{ txn.date | date:'dd/MM/yyyy HH:mm' }}</td>
-                <td><strong>{{ txn.productName }}</strong></td>
-                <td>
-                  <span class="badge" [class.badge-in]="txn.type === 'in'" [class.badge-out]="txn.type === 'out'">
-                    {{ txn.type === 'in' ? '+ Stock In' : '- Stock Out' }}
-                  </span>
-                </td>
-                <td><strong>{{ txn.quantity }}</strong></td>
-                <td class="text-muted">
-                  {{ txn.type === 'in' ? (txn.purchaseCost ?? txn.costAfter ?? '—') + ' ฿' : (txn.costBefore != null ? txn.costBefore + ' ฿' : '—') }}
-                </td>
-                <td class="text-muted">{{ txn.sellPrice != null ? txn.sellPrice + ' ฿' : '—' }}</td>
-                <td
-                  [class.profit-pos]="txn.type === 'out' && txn.sellPrice != null && txn.costBefore != null && (txn.sellPrice - txn.costBefore) * txn.quantity > 0"
-                  [class.profit-neg]="txn.type === 'out' && txn.sellPrice != null && txn.costBefore != null && (txn.sellPrice - txn.costBefore) * txn.quantity < 0">
-                  @if (txn.type === 'out' && txn.sellPrice != null && txn.costBefore != null) {
-                    {{ (txn.sellPrice - txn.costBefore) * txn.quantity | number:'1.2-2' }} ฿
-                  } @else {
-                    <span class="text-muted">—</span>
-                  }
-                </td>
-                <td class="text-muted">{{ txn.note || '—' }}</td>
-                <td class="action-cell">
-                  <button class="btn-edit" (click)="openEdit(txn)">Edit</button>
-                  <button class="btn-delete" (click)="confirmDelete(txn.id)">Delete</button>
-                </td>
+                <th>#</th>
+                <th>Date & Time</th>
+                <th>Product</th>
+                <th>Type</th>
+                <th>Qty</th>
+                <th>Unit Cost</th>
+                <th>Sell Price</th>
+                <th>Profit</th>
+                <th>Note</th>
+                <th></th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (txn of filteredTransactions; track txn.id; let i = $index) {
+                <tr>
+                  <td class="text-muted">{{ i + 1 }}</td>
+                  <td class="text-muted nowrap">{{ txn.date | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td><strong>{{ txn.productName }}</strong></td>
+                  <td>
+                    <span class="badge" [class.badge-in]="txn.type === 'in'" [class.badge-out]="txn.type === 'out'">
+                      {{ txn.type === 'in' ? '+ Stock In' : '- Stock Out' }}
+                    </span>
+                  </td>
+                  <td><strong>{{ txn.quantity }}</strong></td>
+                  <td class="text-muted">
+                    {{ txn.type === 'in' ? (txn.purchaseCost ?? txn.costAfter ?? '—') + ' ฿' : (txn.costBefore != null ? txn.costBefore + ' ฿' : '—') }}
+                  </td>
+                  <td class="text-muted">{{ txn.sellPrice != null ? txn.sellPrice + ' ฿' : '—' }}</td>
+                  <td
+                    [class.profit-pos]="txn.type === 'out' && txn.sellPrice != null && txn.costBefore != null && (txn.sellPrice - txn.costBefore) * txn.quantity > 0"
+                    [class.profit-neg]="txn.type === 'out' && txn.sellPrice != null && txn.costBefore != null && (txn.sellPrice - txn.costBefore) * txn.quantity < 0">
+                    @if (txn.type === 'out' && txn.sellPrice != null && txn.costBefore != null) {
+                      {{ (txn.sellPrice - txn.costBefore) * txn.quantity | number:'1.2-2' }} ฿
+                    } @else {
+                      <span class="text-muted">—</span>
+                    }
+                  </td>
+                  <td class="text-muted">{{ txn.note || '—' }}</td>
+                  <td class="action-cell">
+                    <button class="btn-edit" (click)="openEdit(txn)">Edit</button>
+                    <button class="btn-delete" (click)="confirmDelete(txn.id)">Delete</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          Showing {{ filteredTransactions.length }} of {{ transactions.length }} transactions
+        </div>
+      }
+    </div>
+  }
+
+  @if (activeTab === 'profit') {
+    <!-- Profit Summary Cards -->
+    <div class="txn-stats">
+      <div class="txn-stat txn-stat-profit-today">
+        <span class="txn-stat-value" [class.profit-pos]="profitToday > 0" [class.profit-neg]="profitToday < 0">
+          {{ profitToday | number:'1.2-2' }} ฿
+        </span>
+        <span class="txn-stat-label">Profit Today</span>
       </div>
-      <div class="table-footer">
-        Showing {{ filteredTransactions.length }} of {{ transactions.length }} transactions
+      <div class="txn-stat txn-stat-profit-month">
+        <span class="txn-stat-value" [class.profit-pos]="profitThisMonth > 0" [class.profit-neg]="profitThisMonth < 0">
+          {{ profitThisMonth | number:'1.2-2' }} ฿
+        </span>
+        <span class="txn-stat-label">Profit This Month</span>
       </div>
-    }
-  </div>
+      <div class="txn-stat txn-stat-profit-all">
+        <span class="txn-stat-value" [class.profit-pos]="profitAllTime > 0" [class.profit-neg]="profitAllTime < 0">
+          {{ profitAllTime | number:'1.2-2' }} ฿
+        </span>
+        <span class="txn-stat-label">All-Time Profit</span>
+      </div>
+    </div>
+
+    <!-- Daily Breakdown -->
+    <div class="section">
+      <h3 class="section-title">Daily Breakdown</h3>
+      @if (dailyProfitRows.length === 0) {
+        <div class="empty">
+          <div class="empty-icon">📊</div>
+          <p>No stock-out transactions yet.</p>
+        </div>
+      } @else {
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th class="text-right">Revenue</th>
+                <th class="text-right">Cost</th>
+                <th class="text-right">Profit</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of dailyProfitRows; track row.date) {
+                <tr>
+                  <td class="nowrap">{{ row.date }}</td>
+                  <td class="text-right text-muted">{{ row.revenue | number:'1.2-2' }} ฿</td>
+                  <td class="text-right text-muted">{{ row.cost | number:'1.2-2' }} ฿</td>
+                  <td class="text-right" [class.profit-pos]="row.profit > 0" [class.profit-neg]="row.profit < 0">
+                    {{ row.profit | number:'1.2-2' }} ฿
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <!-- Monthly Breakdown -->
+    <div class="section" style="margin-top: 20px">
+      <h3 class="section-title">Monthly Breakdown</h3>
+      @if (monthlyProfitRows.length === 0) {
+        <div class="empty">
+          <div class="empty-icon">📅</div>
+          <p>No stock-out transactions yet.</p>
+        </div>
+      } @else {
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th class="text-right">Revenue</th>
+                <th class="text-right">Cost</th>
+                <th class="text-right">Profit</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of monthlyProfitRows; track row.month) {
+                <tr>
+                  <td class="nowrap">{{ row.month }}</td>
+                  <td class="text-right text-muted">{{ row.revenue | number:'1.2-2' }} ฿</td>
+                  <td class="text-right text-muted">{{ row.cost | number:'1.2-2' }} ฿</td>
+                  <td class="text-right" [class.profit-pos]="row.profit > 0" [class.profit-neg]="row.profit < 0">
+                    {{ row.profit | number:'1.2-2' }} ฿
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
 </div>
 
 <!-- Delete Confirm Modal -->

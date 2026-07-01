@@ -7,6 +7,7 @@ export interface Product {
   minStock: number;
   price: number;
   cost: number;
+  profit: number;
   colorName?: string;
   colorHex?: string;
   createdAt: string;
